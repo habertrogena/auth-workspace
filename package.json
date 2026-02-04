@@ -1,0 +1,15 @@
+{
+  "name": "auth-workspace",
+  "private": true,
+  "version": "1.0.0",
+  "packageManager": "pnpm@10.28.0",
+  "scripts": {
+    "dev": "pnpm -r dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint"
+  },
+  "dependencies": {
+    "@prisma/client": "5.9.1",
+    "prisma": "5.9.1"
+  }
+}
