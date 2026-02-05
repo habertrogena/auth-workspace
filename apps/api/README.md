@@ -31,6 +31,21 @@
 $ pnpm install
 ```
 
+### Password reset email (development and production)
+
+To send the reset link by email, set these env vars (e.g. in `.env` at repo root or in the API directory):
+
+| Variable     | Description                          | Example (Gmail)           |
+| ------------ | ------------------------------------ | ------------------------- |
+| `SMTP_HOST`  | SMTP server host                     | `smtp.gmail.com`          |
+| `SMTP_PORT`  | SMTP port (e.g. 587 for TLS)         | `587`                     |
+| `SMTP_USER`  | SMTP login                           | your email                |
+| `SMTP_PASS`  | SMTP password (e.g. Gmail app pass)  | app-specific password     |
+| `SMTP_SECURE`| Set to `true` for port 465           | `false` for 587           |
+| `MAIL_FROM`  | Optional sender address              | defaults to `SMTP_USER`   |
+
+Without these, in development the API still returns the reset link in the JSON response so you can test manually.
+
 ## Compile and run the project
 
 ```bash
