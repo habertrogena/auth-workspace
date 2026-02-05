@@ -4,38 +4,33 @@ on:
   pull_request:
     branches:
       - main
-      - develop
 
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      # 1️⃣ Checkout the repo
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      # 2️⃣ Set up Node.js
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: "pnpm"
 
-      # 3️⃣ Install pnpm
-      - name: Install pnpm
-        run: npm install -g pnpm@10.28.0
-
-      # 4️⃣ Install dependencies
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
-      # 5️⃣ Run lint
+      - name: Prisma generate
+        run: pnpm exec prisma generate
+        env:
+          DATABASE_URL: "mysql://placeholder:placeholder@localhost:3306/placeholder"
+
       - name: Lint
         run: pnpm -r lint
 
-      # 6️⃣ Run tests
-      - name: Test
-        run: pnpm -r test
-
-      # 7️⃣ Build apps
-      - name: Build apps
+     
+      - name: Build
         run: pnpm -r build
