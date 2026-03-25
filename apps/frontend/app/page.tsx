@@ -1,29 +1,39 @@
 "use client";
 
 import { useEffect } from "react";
-import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import MainContent from "@/components/dashboard/MainContent";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/useAuth";
 import { LoadingPage } from "@/components/ui/loading-spinner";
+import AdminLayout from "@/components/admin/AdminLayout";
+import AdminDashboardContent from "@/components/admin/AdminDashboardContent";
 
-export default function DashboardPage() {
+/** Root: ADMIN sees admin dashboard; BUSINESS is redirected to /dashboard. */
+export default function HomePage() {
   const { user, isAuthenticated, isAuthLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!isAuthLoading && !isAuthenticated) {
-      router.push("/register");
+      router.push("/login");
+      return;
     }
-  }, [isAuthenticated, isAuthLoading, router]);
+    if (!isAuthLoading && user?.role === "BUSINESS") {
+      router.push("/dashboard");
+      return;
+    }
+    if (!isAuthLoading && user && user.role !== "ADMIN") {
+      router.push("/login");
+    }
+  }, [isAuthenticated, isAuthLoading, user, router]);
 
   if (isAuthLoading && !user) return <LoadingPage />;
-
   if (!user) return null;
+  if (user.role === "BUSINESS") return <LoadingPage />;
+  if (user.role !== "ADMIN") return null;
 
   return (
-    <DashboardLayout>
-      <MainContent user={user} />
-    </DashboardLayout>
+    <AdminLayout>
+      <AdminDashboardContent />
+    </AdminLayout>
   );
 }

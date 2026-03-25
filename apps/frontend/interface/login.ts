@@ -1,4 +1,6 @@
+/** Body for POST /auth/login. Send either email or username. */
 export interface LoginInput {
-  email: string;
+  email?: string;
+  username?: string;
   password: string;
 }

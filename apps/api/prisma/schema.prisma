@@ -1,0 +1,164 @@
+// ForwardFlow Kenya - Prisma schema
+// PostgreSQL + Prisma ORM
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------
+// Enums
+// -----------------------------------------------
+
+enum Role {
+  ADMIN
+  BUSINESS
+}
+
+enum PlanType {
+  FREE
+  PREMIUM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  LOCKED
+}
+
+// -----------------------------------------------
+// User (auth: admin + business owners)
+// -----------------------------------------------
+
+model User {
+  id                   String    @id @default(uuid())
+  username             String    @unique  // used for admin login (e.g. habertdev)
+  email                String?   @unique // optional for admin; used for business users
+  name                 String
+  password             String
+  role                 Role      @default(BUSINESS)
+  age                  Int?
+  nationalID           String?
+  passwordResetToken   String?
+  passwordResetExpires DateTime?
+  createdAt            DateTime  @default(now())
+
+  businesses Business[]
+}
+
+// -----------------------------------------------
+// Business (tenant per user)
+// -----------------------------------------------
+
+model Business {
+  id           String   @id @default(uuid())
+  userId       String
+  name         String
+  type         String
+  industry     String?
+  createdAt    DateTime @default(now())
+  lastActiveAt DateTime?
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscriptions Subscription[]
+  analytics    Analytics?
+  lock         Lock?
+  transactions Transaction[]
+  customers    Customer[]
+  invoices     Invoice[]
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+model Transaction {
+  id          String          @id @default(uuid())
+  businessId  String
+  amount      Decimal         @db.Decimal(14, 2)
+  type        TransactionType
+  category    String
+  description String?
+  date        DateTime
+  createdAt   DateTime        @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+model Customer {
+  id         String   @id @default(uuid())
+  businessId String
+  name       String
+  phone      String?
+  email      String?
+  createdAt  DateTime @default(now())
+
+  business Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  invoices Invoice[]
+}
+
+enum InvoiceStatus {
+  PAID
+  UNPAID
+}
+
+model Invoice {
+  id         String        @id @default(uuid())
+  businessId String
+  customerId String
+  amount     Decimal       @db.Decimal(14, 2)
+  status     InvoiceStatus @default(UNPAID)
+  dueDate    DateTime
+  createdAt  DateTime      @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+}
+
+// -----------------------------------------------
+// Subscription (one active per business; history via multiple rows)
+// -----------------------------------------------
+
+model Subscription {
+  id         String             @id @default(uuid())
+  businessId String
+  planType   PlanType          @default(FREE)
+  status     SubscriptionStatus @default(ACTIVE)
+  startDate  DateTime
+  endDate    DateTime?
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+// -----------------------------------------------
+// Analytics (one per business - metadata only, no transaction details)
+// -----------------------------------------------
+
+model Analytics {
+  id                      String   @id @default(uuid())
+  businessId               String   @unique
+  lastLogin                DateTime?
+  totalTransactionsCount  Int      @default(0)
+  lastSyncAt               DateTime?
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+// -----------------------------------------------
+// Lock (one per business - when locked, deny access)
+// -----------------------------------------------
+
+model Lock {
+  id         String   @id @default(uuid())
+  businessId String   @unique
+  isLocked   Boolean  @default(false)
+  reason     String?
+  lockedAt   DateTime?
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}

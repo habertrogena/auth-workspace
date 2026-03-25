@@ -1,24 +1,140 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// ForwardFlow Kenya - Prisma schema (root copy for Prisma client generation)
+// Use this schema when running prisma generate from repo root so @prisma/client has correct types.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  ADMIN
+  BUSINESS
+}
+
+enum PlanType {
+  FREE
+  PREMIUM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  LOCKED
+}
 
 model User {
   id                   String    @id @default(uuid())
-  email                String    @unique
+  username             String    @unique
+  email                String?   @unique
   name                 String
   password             String
+  role                 Role      @default(BUSINESS)
   age                  Int?
   nationalID           String?
   passwordResetToken   String?
   passwordResetExpires DateTime?
   createdAt            DateTime  @default(now())
+
+  businesses Business[]
+}
+
+model Business {
+  id           String    @id @default(uuid())
+  userId       String
+  name         String
+  type         String
+  industry     String?
+  createdAt    DateTime  @default(now())
+  lastActiveAt DateTime?
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscriptions Subscription[]
+  analytics    Analytics?
+  lock         Lock?
+  transactions Transaction[]
+  customers    Customer[]
+  invoices     Invoice[]
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+model Transaction {
+  id          String          @id @default(uuid())
+  businessId  String
+  amount      Decimal         @db.Decimal(14, 2)
+  type        TransactionType
+  category    String
+  description String?
+  date        DateTime
+  createdAt   DateTime        @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+model Customer {
+  id         String   @id @default(uuid())
+  businessId String
+  name       String
+  phone      String?
+  email      String?
+  createdAt  DateTime @default(now())
+
+  business Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  invoices Invoice[]
+}
+
+enum InvoiceStatus {
+  PAID
+  UNPAID
+}
+
+model Invoice {
+  id         String        @id @default(uuid())
+  businessId String
+  customerId String
+  amount     Decimal       @db.Decimal(14, 2)
+  status     InvoiceStatus @default(UNPAID)
+  dueDate    DateTime
+  createdAt  DateTime      @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+}
+
+model Subscription {
+  id         String             @id @default(uuid())
+  businessId String
+  planType   PlanType          @default(FREE)
+  status     SubscriptionStatus @default(ACTIVE)
+  startDate  DateTime
+  endDate    DateTime?
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+model Analytics {
+  id                     String   @id @default(uuid())
+  businessId             String   @unique
+  lastLogin              DateTime?
+  totalTransactionsCount Int      @default(0)
+  lastSyncAt             DateTime?
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+model Lock {
+  id         String   @id @default(uuid())
+  businessId String   @unique
+  isLocked   Boolean  @default(false)
+  reason     String?
+  lockedAt   DateTime?
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 }

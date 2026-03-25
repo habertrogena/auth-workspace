@@ -10,7 +10,6 @@ import {
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { PinoLogger } from 'nestjs-pino';
 import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
@@ -36,11 +35,6 @@ export class AuthController {
     private readonly logger: PinoLogger,
   ) {}
 
-  @Post('register')
-  async register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
-  }
-
   @Post('login')
   async login(
     @Body() dto: LoginDto,
@@ -51,7 +45,7 @@ export class AuthController {
     res.cookie('accessToken', token, COOKIE_OPTIONS);
     this.logger.info({ userId: user.id }, 'Login successful');
 
-    return user;
+    return { token, user };
   }
 
   @Post('logout')

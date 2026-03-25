@@ -6,12 +6,14 @@ import { useAuth } from "@/context/useAuth";
 import LoginForm from "@/components/forms/LoginForm";
 
 export default function LoginPage() {
-  const { isAuthenticated, isAuthLoading } = useAuth();
+  const { user, isAuthenticated, isAuthLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isAuthLoading && isAuthenticated) router.replace("/");
-  }, [isAuthLoading, isAuthenticated, router]);
+    if (!isAuthLoading && isAuthenticated && user) {
+      router.replace(user.role === "BUSINESS" ? "/dashboard" : "/");
+    }
+  }, [isAuthLoading, isAuthenticated, user, router]);
 
   if (isAuthenticated) return null;
 

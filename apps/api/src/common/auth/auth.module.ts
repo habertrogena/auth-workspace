@@ -20,5 +20,6 @@ const JWT_EXPIRES_IN_SEC = Number.isNaN(parsed) || parsed < 60 ? 3600 : parsed;
   ],
   controllers: [AuthController],
   providers: [AuthService],
+  exports: [JwtModule],
 })
 export class AuthModule {}

@@ -7,6 +7,13 @@ import { AppService } from './app.service';
 import { CommonModule } from './common/common.module';
 import { MailModule } from './common/mail/mail.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+import { BusinessesModule } from './businesses/businesses.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { TransactionsModule } from './transactions/transactions.module';
+import { CustomersModule } from './customers/customers.module';
+import { InvoicesModule } from './invoices/invoices.module';
 
 @Module({
   imports: [
@@ -28,6 +35,13 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
       },
     ]),
     CommonModule,
+    BusinessesModule,
+    SubscriptionsModule,
+    AnalyticsModule,
+    DashboardModule,
+    TransactionsModule,
+    CustomersModule,
+    InvoicesModule,
   ],
   controllers: [AppController],
   providers: [

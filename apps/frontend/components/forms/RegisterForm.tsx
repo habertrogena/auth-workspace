@@ -11,6 +11,7 @@ import {
 } from "@/validation/register.schema";
 
 import { useAuth } from "@/context/useAuth";
+import { ApiError } from "@/lib/api";
 
 import {
   Form,
@@ -48,7 +49,12 @@ export default function RegisterForm() {
       await registerUser(values); // This will register → login → fetch user → redirect
       form.reset();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Something went wrong";
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Something went wrong";
       setServerError(message);
     }
   }

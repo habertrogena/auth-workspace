@@ -34,8 +34,15 @@ export async function apiFetch<T>(
     clearTimeout(timeoutId);
 
     if (!res.ok) {
-      const error = await res.json().catch(() => null);
-      throw new ApiError(error?.message || "Request failed", res.status);
+      const body = await res.json().catch(() => null);
+      const rawMessage = body?.message;
+      const message =
+        typeof rawMessage === "string"
+          ? rawMessage
+          : Array.isArray(rawMessage)
+            ? rawMessage.join(", ")
+            : "Request failed";
+      throw new ApiError(message, res.status);
     }
 
     return res.json();

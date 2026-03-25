@@ -6,7 +6,6 @@ import {
 import { randomBytes } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
-import { RegisterDto } from './dto/register.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import * as bcrypt from 'bcrypt';
@@ -23,55 +22,37 @@ export class AuthService {
     private mail: MailService,
   ) {}
 
-  async register(dto: RegisterDto) {
-    //check if user exist
-    const existing = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-    });
-
-    if (existing) throw new BadRequestException('Email already in use');
-
-    const hashed = await bcrypt.hash(dto.password, 10);
-
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        name: dto.name,
-        password: hashed,
-        age: dto.age, // optional
-        nationalID: dto.nationalID, // optional
-      },
-    });
-
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      age: user.age,
-      nationalID: user.nationalID,
-      createdAt: user.createdAt,
-    };
-  }
-
+  /**
+   * Login by email (business users) or username (admin). JWT payload includes sub, username, role.
+   */
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-    });
+    if (!dto.email && !dto.username) {
+      throw new UnauthorizedException('Provide email or username');
+    }
+    const user = dto.email
+      ? await this.prisma.user.findUnique({ where: { email: dto.email } })
+      : await this.prisma.user.findUnique({
+          where: { username: dto.username! },
+        });
 
-    if (!user) throw new UnauthorizedException("User doesn't exist");
+    if (!user) throw new UnauthorizedException('Invalid credentials');
 
     const passwordValid = await bcrypt.compare(dto.password, user.password);
-    if (!passwordValid) throw new UnauthorizedException('Wrong password');
+    if (!passwordValid) {
+      throw new UnauthorizedException('Invalid username or password');
+    }
 
-    const payload = { sub: user.id, email: user.email };
+    const payload = { sub: user.id, username: user.username, role: user.role };
     const token = this.jwt.sign(payload);
 
     return {
       token,
       user: {
         id: user.id,
+        username: user.username,
         email: user.email,
         name: user.name,
+        role: user.role,
         nationalID: user.nationalID,
         age: user.age,
       },
@@ -83,8 +64,10 @@ export class AuthService {
     if (!user) throw new UnauthorizedException();
     return {
       id: user.id,
+      username: user.username,
       email: user.email,
       name: user.name,
+      role: user.role,
       age: user.age,
       nationalID: user.nationalID,
     };
@@ -95,8 +78,8 @@ export class AuthService {
    * Requires SMTP_* env vars. In dev without SMTP, resetLink is returned in the response.
    */
   async forgotPassword(dto: ForgotPasswordDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
+    const user = await this.prisma.user.findFirst({
+      where: { email: dto.email ?? undefined },
     });
 
     const message =
@@ -119,7 +102,7 @@ export class AuthService {
 
     const resetLink = `${process.env.FRONTEND_URL ?? 'http://localhost:3000'}/reset-password?token=${token}`;
 
-    if (this.mail.isConfigured()) {
+    if (user.email && this.mail.isConfigured()) {
       await this.mail.sendResetLink(user.email, resetLink);
       return { message };
     }

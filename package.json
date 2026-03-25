@@ -6,10 +6,20 @@
   "scripts": {
     "dev": "pnpm -r dev",
     "build": "pnpm -r build",
-    "lint": "pnpm -r lint"
+    "lint": "pnpm -r lint",
+    "docker:db": "docker compose up -d",
+    "docker:db:down": "docker compose down",
+    "db:up": "docker compose up -d",
+    "db:migrate": "docker compose up -d && node scripts/wait-for-db.mjs && prisma migrate dev",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "cd apps/api && pnpm run prisma:seed",
+    "prisma:seed-dummy": "cd apps/api && pnpm run prisma:seed-dummy"
   },
   "dependencies": {
-    "@prisma/client": "5.9.1",
+    "@prisma/client": "5.9.1"
+  },
+  "devDependencies": {
     "prisma": "5.9.1"
   }
 }

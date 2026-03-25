@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -27,7 +26,7 @@ export default function LoginForm() {
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
+      emailOrUsername: "",
       password: "",
     },
   });
@@ -49,24 +48,24 @@ export default function LoginForm() {
         onSubmit={form.handleSubmit(onSubmit)}
         className="w-full max-w-md space-y-6 rounded-2xl bg-white p-8 shadow-lg"
       >
-        <h1 className="text-2xl font-bold text-slate-900">Login</h1>
+        <h1 className="text-2xl font-bold text-slate-900">ForwardFlow</h1>
 
         {serverError && (
           <p className="text-red-600 text-center font-medium">{serverError}</p>
         )}
 
-        {/* Email */}
         <FormField
           control={form.control}
-          name="email"
+          name="emailOrUsername"
           render={({ field, fieldState }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Email or username</FormLabel>
               <FormControl>
                 <Input
                   {...field}
                   value={field.value ?? ""}
-                  placeholder="you@example.com"
+                  placeholder="Email or username"
+                  autoComplete="username"
                 />
               </FormControl>
               <FormMessage>{fieldState.error?.message}</FormMessage>
@@ -102,15 +101,6 @@ export default function LoginForm() {
             </FormItem>
           )}
         />
-
-        <div className="flex justify-end">
-          <Link
-            href="/forgot-password"
-            className="text-sm text-indigo-600 hover:underline"
-          >
-            Forgot password?
-          </Link>
-        </div>
 
         <Button
           type="submit"

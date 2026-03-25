@@ -2,13 +2,19 @@
 
 import React, { createContext, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useRegister } from "@/hooks/useRegister";
-import { useLogin } from "@/hooks/useLogin";
+import { useLogin, setStoredToken } from "@/hooks/useLogin";
 import { useUser } from "@/hooks/useUser";
 import { apiFetch, ApiError } from "@/lib/api";
 import type { AuthUser, AuthContextType } from "./types";
-import type { RegisterFormValues } from "@/validation/register.schema";
 import type { LoginFormValues } from "@/validation/login.schema";
+
+function toLoginInput(values: LoginFormValues): { email?: string; username?: string; password: string } {
+  const isEmail = values.emailOrUsername.includes("@");
+  return {
+    password: values.password,
+    ...(isEmail ? { email: values.emailOrUsername } : { username: values.emailOrUsername }),
+  };
+}
 
 export const AuthContext = createContext<AuthContextType | undefined>(
   undefined,
@@ -17,7 +23,6 @@ export const AuthContext = createContext<AuthContextType | undefined>(
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
-  const { register: registerApi } = useRegister();
   const { login: loginApi } = useLogin();
   const { getUser } = useUser();
 
@@ -55,28 +60,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     runBootstrap();
   }, [runBootstrap]);
 
-  async function register(data: RegisterFormValues) {
-    setIsAuthLoading(true);
-    try {
-      await registerApi(data);
-      await loginApi({ email: data.email, password: data.password });
-      const me = await getUser();
-      setUser(me);
-      router.push("/");
-    } catch (err) {
-      throw err;
-    } finally {
-      setIsAuthLoading(false);
-    }
-  }
-
   async function login(data: LoginFormValues) {
     setIsAuthLoading(true);
     try {
-      await loginApi(data);
-      const me = await getUser();
-      setUser(me);
-      router.push("/");
+      const res = await loginApi(toLoginInput(data));
+      setUser(res.user as AuthUser);
+      if (res.user.role === "BUSINESS") router.push("/dashboard");
+      else router.push("/");
     } catch (err) {
       throw err;
     } finally {
@@ -90,6 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // Still clear local state so user isn't stuck if API fails
     } finally {
+      setStoredToken(null);
       setUser(null);
       router.push("/login");
     }
@@ -101,7 +92,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         isAuthenticated,
         isAuthLoading,
-        register,
         login,
         logout,
       }}
