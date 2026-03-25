@@ -1,0 +1,17 @@
+# Render Blueprint: backend API only.
+# Connect this repo in Render and add env vars in the dashboard (see docs/DEPLOYMENT.md).
+
+services:
+  - type: web
+    name: auth-api
+    runtime: node
+    plan: free
+
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @apps/api build
+    startCommand: node apps/api/dist/main.js
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Add in Render dashboard: DATABASE_URL, JWT_SECRET, CORS_ORIGIN or FRONTEND_URL, FRONTEND_URL
+      # Optional: SMTP_* for password reset emails
